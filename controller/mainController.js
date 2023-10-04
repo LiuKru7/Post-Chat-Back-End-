@@ -1,4 +1,5 @@
-const userDb = require("../schemas/userSchema"); // Import the model
+const userDb = require("../schemas/userSchema");
+const postsDb = require("../schemas/postSchema")
 const bCrypt = require("bcrypt");
 const jwt = require("jsonwebtoken")
 
@@ -68,5 +69,10 @@ module.exports= {
         singleUser.password = newHashedPassword;
         await singleUser.save();
         res.send({ error: false, data: [], message: "Password changed successfully" });
+    },
+    allPosts: async  (req,res) => {
+        const allPost = await postsDb.find()
+        if (!allPost) return res.send({ error: true, data: [], message: "no posts" });
+        res.send({ error: false, data: allPost, message: "all posts" });
     }
 }
