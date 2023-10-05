@@ -12,9 +12,7 @@ module.exports = {
                 return res.send({ error: true, data: [], message: "false" });
             }
             req.user = data;
-
             console.log(data)
             next();
-
         });
     }}

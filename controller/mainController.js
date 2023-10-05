@@ -1,12 +1,12 @@
 const userDb = require("../schemas/userSchema");
 const postsDb = require("../schemas/postSchema")
+const messageDb = require("../schemas/messagesSchema")
 const bCrypt = require("bcrypt");
 const jwt = require("jsonwebtoken")
 
 module.exports= {
     register: async (req,res) => {
         const info = req.body
-
 
         const singleUser = await userDb.findOne({username: info.username})
         if (singleUser) return res.send ({error: true, data:[], message:"username exist" })
@@ -46,6 +46,11 @@ module.exports= {
         res.send ({error: false, data: singleUser, message:""})
     },
     changeImage : async  (req,res) => {
+        const updatedPosts = await postsDb.updateMany(
+            { userId: req.user._id },
+            { $set: { userImage: req.body.img } },
+            {new: true}
+        );
 
         const singleUser = await userDb.findOneAndUpdate(
             {_id: req.user._id},
@@ -74,5 +79,22 @@ module.exports= {
         const allPost = await postsDb.find()
         if (!allPost) return res.send({ error: true, data: [], message: "no posts" });
         res.send({ error: false, data: allPost, message: "all posts" });
+    },
+    allUsers: async  (req,res) => {
+        const allUsers = await userDb.find()
+        if (!allUsers) return res.send({ error: true, data: [], message: "no users" });
+        res.send({ error: false, data: allUsers, message: "all users" });
+    },
+    allMessages: async (req,res) => {
+        console.log("labas")
+        const allMyMsg = await messageDb.find({
+        $or: [
+            { usernameOneId: req.user._id },
+            { usernameTwoId: req.user._id }
+        ] })
+
+       if (!allMyMsg) return res.send({ error: true, data: [], message: "no messages" });
+        res.send({ error: false, data: allMyMsg, message: "all your messages" });
     }
+
 }

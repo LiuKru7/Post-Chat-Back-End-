@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 
 const {
-    register, login,profileInfo,changeImage,changePassword, allPosts
+    register, login,profileInfo,changeImage,changePassword, allPosts, allUsers, allMessages
 } = require("../controller/mainController")
 
 const validators = require ('../middleWare/validation')
@@ -13,5 +13,7 @@ router.get ("/profile", validators.authorization, profileInfo)
 router.post ("/changeImage", validators.authorization, changeImage)
 router.post ("/changePassword", validators.authorization, changePassword)
 router.get ("/allPosts", allPosts )
+router.get('/allUsers', allUsers)
+router.get('/allMessages', validators.authorization, allMessages)
 
 module.exports=router

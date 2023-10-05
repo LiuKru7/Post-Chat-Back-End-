@@ -6,9 +6,17 @@ const postSchema = new Schema ({
         type: String,
         required: true
     },
+    userImage:{
+        type:String,
+        required:true
+    },
     userId: {
         type: String,
         required: true
+    },
+    date: {
+        type: String,
+        required:true
     },
     title:{
         type: String,
