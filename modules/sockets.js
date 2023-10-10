@@ -1,9 +1,9 @@
 const { Server } = require('socket.io');
+const jwt = require("jsonwebtoken");
 const userDb = require("../schemas/userSchema");
 const postsDb = require("../schemas/postSchema");
 const messageDb = require("../schemas/messagesSchema")
 const { v4: uuidv4 } = require('uuid');
-
 
 module.exports = (server) => {
     const io = new Server(server, {
@@ -12,6 +12,18 @@ module.exports = (server) => {
         },
     });
     io.on('connection', (socket)=> {
+        socket.on ("autoLogin", async token=> {
+
+            if (!token) return;
+            jwt.verify(token, process.env.JWT_SECRET, async (err, data) => {
+                if (err) {
+                    return console.log("error")
+                } else {
+                    const user = await userDb.findOne({_id: data._id}, {password: 0})
+                    socket.emit ('autoLoginInfo', user)
+                }
+            });
+        })
         socket.on("newPost", info => {
             if (!info.image.startsWith('http://') && !info.image.startsWith('https://')) {
                 return
@@ -70,8 +82,6 @@ module.exports = (server) => {
 
                 const allPosts = await postsDb.find({});
                 io.emit('addAllPost', allPosts);
-
-
             } catch (err) {
                 console.error("Error processing like:", err);
             }
@@ -84,7 +94,6 @@ module.exports = (server) => {
                 console.error("Error processing like:", err);
             }
         })
-
         socket.on('newMessage', async (info) => {
             try {
                 const messageInfo = {
@@ -94,20 +103,18 @@ module.exports = (server) => {
                     msgFrom: info.myUsername,
                     message: info.message
                 };
-
                 const message = {
                     msgTo: info.username,
                     msgFrom: info.myUsername,
                     message: info.message
                 };
-
                 let existingChat = await messageDb.findOne({
                     $or: [
                         { usernameOneId: messageInfo.msgFromId, usernameTwoId: messageInfo.msgToId },
                         { usernameOneId: messageInfo.msgToId, usernameTwoId: messageInfo.msgFromId }
                     ]
                 });
-
+                let msgNew = null
                 if (!existingChat) {
                     const newChatRoom = new messageDb({
                         roomId: uuidv4(),
@@ -119,15 +126,18 @@ module.exports = (server) => {
                     });
                     existingChat = await newChatRoom.save();
                 } else {
-                    await messageDb.findOneAndUpdate(
+                    msgNew = await messageDb.findOneAndUpdate(
                         { _id: existingChat._id },
-                        { $push: { messages: message } }
-                    );
+                        { $push: { messages: message }},
+                        {new: true}
+                );
                 }
-
                 const roomId = String(existingChat._id);
+                socket.join(roomId)
+                if (msgNew!== null) {
+                    io.to(msgNew.roomId).emit('newMsg',msgNew);
+                }
                 socket.to(roomId).emit('newMessageInRoom', message);
-
             } catch (err) {
                 console.error("Error processing message", err);
             }
@@ -149,5 +159,3 @@ module.exports = (server) => {
         });
     });
 }
-
-

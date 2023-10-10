@@ -14,7 +14,6 @@ module.exports= {
             username: info.username,
             password: info.password,
         })
-        console.log(user)
         const hash = await bCrypt.hash(user.password, 10);
         user.password = hash
 
@@ -58,7 +57,11 @@ module.exports= {
             {new: true},
             {password:0})
         if (!singleUser) return res.send ({error: true, data: [], message: "error"})
-        res.send ({error: false, data: singleUser, message: ""})
+        const allUsers = await userDb.find()
+        if (!allUsers) return res.send({ error: true, data: [], message: "no users" });
+
+
+        res.send ({error: false, data: [singleUser,allUsers], message: ""})
     },
     changePassword: async (req, res) => {
         const info = req.body;
@@ -86,7 +89,6 @@ module.exports= {
         res.send({ error: false, data: allUsers, message: "all users" });
     },
     allMessages: async (req,res) => {
-        console.log("labas")
         const allMyMsg = await messageDb.find({
         $or: [
             { usernameOneId: req.user._id },
