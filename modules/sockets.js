@@ -6,24 +6,26 @@ const messageDb = require("../schemas/messagesSchema")
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = (server) => {
+
     const io = new Server(server, {
         cors: {
             origin: 'http://localhost:5173',
         },
     });
+
     io.on('connection', (socket)=> {
         socket.on ("autoLogin", async token=> {
-
             if (!token) return;
             jwt.verify(token, process.env.JWT_SECRET, async (err, data) => {
                 if (err) {
-                    return console.log("error")
+                    return
                 } else {
                     const user = await userDb.findOne({_id: data._id}, {password: 0})
                     socket.emit ('autoLoginInfo', user)
                 }
             });
         })
+
         socket.on("newPost", info => {
             if (!info.image.startsWith('http://') && !info.image.startsWith('https://')) {
                 return
@@ -40,11 +42,11 @@ module.exports = (server) => {
             user.save().then(async () => {
                 const allPost = await postsDb.find();
                 io.emit('addAllPost', allPost)
-
             }).catch(error => {
                 console.error("Error saving post:", error);
             });
         });
+
         socket.on('newComment', async (info) => {
             const newComment = {
                 comment: info.comment,
@@ -57,10 +59,10 @@ module.exports = (server) => {
             );
             const onePost = await postsDb.findOne({ _id: info.postId });
             io.emit('addOnePost', updatedPost);
-
             const allPosts = await postsDb.find({});
             io.emit('addAllPost', allPosts)
         });
+
         socket.on('newLike', async (info) => {
             try {
                 const currentPost = await postsDb.findOne({ _id: info.postId });
@@ -86,6 +88,7 @@ module.exports = (server) => {
                 console.error("Error processing like:", err);
             }
         });
+
         socket.on('usersUpdate', async (info) => {
             try {
                 const allUsers = await userDb.find()
@@ -94,6 +97,7 @@ module.exports = (server) => {
                 console.error("Error processing like:", err);
             }
         })
+
         socket.on('newMessage', async (info) => {
             try {
                 const messageInfo = {
@@ -142,9 +146,11 @@ module.exports = (server) => {
                 console.error("Error processing message", err);
             }
         });
+
         socket.on('joinChat', async (roomId) => {
             socket.join(roomId)
         });
+
         socket.on('sendMessage', async (info) => {
             const msg = {
                 message: info.message,

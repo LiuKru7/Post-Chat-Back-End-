@@ -7,7 +7,6 @@ const jwt = require("jsonwebtoken")
 module.exports= {
     register: async (req,res) => {
         const info = req.body
-
         const singleUser = await userDb.findOne({username: info.username})
         if (singleUser) return res.send ({error: true, data:[], message:"username exist" })
             const user = new userDb  ({
@@ -50,7 +49,6 @@ module.exports= {
             { $set: { userImage: req.body.img } },
             {new: true}
         );
-
         const singleUser = await userDb.findOneAndUpdate(
             {_id: req.user._id},
             {$set:{image:req.body.img}},
@@ -59,8 +57,6 @@ module.exports= {
         if (!singleUser) return res.send ({error: true, data: [], message: "error"})
         const allUsers = await userDb.find()
         if (!allUsers) return res.send({ error: true, data: [], message: "no users" });
-
-
         res.send ({error: false, data: [singleUser,allUsers], message: ""})
     },
     changePassword: async (req, res) => {
@@ -94,9 +90,7 @@ module.exports= {
             { usernameOneId: req.user._id },
             { usernameTwoId: req.user._id }
         ] })
-
        if (!allMyMsg) return res.send({ error: true, data: [], message: "no messages" });
         res.send({ error: false, data: allMyMsg, message: "all your messages" });
     }
-
 }
